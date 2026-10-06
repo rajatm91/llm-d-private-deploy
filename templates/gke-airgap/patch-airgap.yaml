@@ -3,18 +3,23 @@ kind: Deployment
 metadata:
   name: optimized-baseline-nvidia-gpu-vllm-decode
 spec:
+  replicas: __REPLICAS__
   template:
     metadata:
       annotations:
         gke-gcsfuse/volumes: "true"
+        # "0" = no limit on the injected gcsfuse sidecar; large model reads need it
+        gke-gcsfuse/cpu-limit: "0"
+        gke-gcsfuse/memory-limit: "0"
+        gke-gcsfuse/ephemeral-storage-limit: "0"
     spec:
       containers:
         - name: modelserver
           args:
-            - "/models/Qwen/Qwen3-32B"
-            - "--served-model-name=Qwen/Qwen3-32B"   # EPP/clients still use the HF name
+            - "/models/__MODEL_ID__"
+            - "--served-model-name=__MODEL_ID__"
             - "--disable-access-log-for-endpoints=/health,/metrics,/v1/models"
-            - "--tensor-parallel-size=2"
+            - "--tensor-parallel-size=__TP__"
           env:
             - name: HF_TOKEN
               $patch: delete
@@ -26,6 +31,11 @@ spec:
               value: "1"
             - name: DO_NOT_TRACK
               value: "1"
+          resources:
+            limits:
+              nvidia.com/gpu: __TP__
+            requests:
+              nvidia.com/gpu: __TP__
           volumeMounts:
             - name: models
               mountPath: /models
@@ -36,6 +46,6 @@ spec:
             driver: gcsfuse.csi.storage.gke.io
             readOnly: true
             volumeAttributes:
-              bucketName: MY_MODEL_BUCKET
+              bucketName: __MODEL_BUCKET__
               mountOptions: "implicit-dirs,file-cache:max-size-mb:-1,file-cache:enable-parallel-downloads:true"
-              fileCacheCapacity: "100Gi"
+              fileCacheCapacity: "__GCSFUSE_FILE_CACHE__"

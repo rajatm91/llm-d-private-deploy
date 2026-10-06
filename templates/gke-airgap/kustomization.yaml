@@ -1,0 +1,13 @@
+# Rendered by scripts/50-deploy-modelserver.sh into
+#   work/llm-d/guides/optimized-baseline/modelserver/gpu/vllm/gke-airgap/
+# __TOKENS__ are replaced from config.env.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../gke                      # upstream GKE overlay (adds NCCL tuner fix)
+images:
+  - name: docker.io/vllm/vllm-openai
+    newName: __VLLM_IMAGE_NAME__
+    newTag: __VLLM_IMAGE_TAG__
+patches:
+  - path: patch-airgap.yaml
