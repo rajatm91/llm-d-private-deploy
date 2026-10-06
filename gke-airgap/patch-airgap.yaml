@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: optimized-baseline-nvidia-gpu-vllm-decode
+spec:
+  template:
+    metadata:
+      annotations:
+        gke-gcsfuse/volumes: "true"
+    spec:
+      containers:
+        - name: modelserver
+          args:
+            - "/models/Qwen/Qwen3-32B"
+            - "--served-model-name=Qwen/Qwen3-32B"   # EPP/clients still use the HF name
+            - "--disable-access-log-for-endpoints=/health,/metrics,/v1/models"
+            - "--tensor-parallel-size=2"
+          env:
+            - name: HF_TOKEN
+              $patch: delete
+            - name: HF_HUB_OFFLINE
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            - name: VLLM_NO_USAGE_STATS
+              value: "1"
+            - name: DO_NOT_TRACK
+              value: "1"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              readOnly: true
+      volumes:
+        - name: models
+          csi:
+            driver: gcsfuse.csi.storage.gke.io
+            readOnly: true
+            volumeAttributes:
+              bucketName: MY_MODEL_BUCKET
+              mountOptions: "implicit-dirs,file-cache:max-size-mb:-1,file-cache:enable-parallel-downloads:true"
+              fileCacheCapacity: "100Gi"

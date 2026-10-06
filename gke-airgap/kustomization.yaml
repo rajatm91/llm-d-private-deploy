@@ -1,0 +1,11 @@
+# Copy this dir to ${REPO_ROOT}/guides/optimized-baseline/modelserver/gpu/vllm/gke-airgap/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../gke
+images:
+  - name: docker.io/vllm/vllm-openai
+    newName: us-central1-docker.pkg.dev/MY_PROJECT/llm-d/vllm/vllm-openai
+    newTag: v0.26.0
+patches:
+  - path: patch-airgap.yaml
